@@ -1,3 +1,1 @@
-# kubernetes - wordpress
-
-## python wordpress.py
+# Kubernetes
