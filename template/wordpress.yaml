@@ -1,0 +1,97 @@
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: wordpress-002
+
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: wordpress-002
+  namespace: wordpress-002
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: wordpress-002
+    spec:
+      containers:
+      - name: wordpress
+        image: 10779164/wordpress:v1
+        ports:
+          - containerPort: 80
+          - containerPort: 9000
+        volumeMounts:
+          - name: cm-wordpress-002
+            mountPath: /var/www/html/wordpress/wp-config.php
+            subPath: wp-config.php
+          #- name: rbd-wordpress-002
+            #mountPath: /var/www/html/wordpress
+        volumeMounts:
+          - mountPath: /var/www/html/wordpress
+            readOnly: false
+            name: wordpress-data
+      - name: wordpress-mysql
+        image: 10779164/wordpress-mysql:v1
+        env:
+        - name: MYSQL_ROOT_PASSWORD
+          value: 123.com
+        - name: WORDPRESS_DATABASE
+          value: wordpress
+        - name: WORDPRESS_USER
+          value: wordpress
+        - name: WORDPRESS_PASSWORD
+          value: 123.com
+        ports:
+          - containerPort: 3306
+        volumeMounts:
+          - mountPath: /var/lib/mysql
+            name: wordpress-mysql-data
+      volumes:
+      - hostPath:
+          path: /data/wordpress/wordpress-002/wordpress
+        name: wordpress-data
+      #- name: rbd-wordpress-002
+        #rbd:
+          #monitors:
+            #- '192.168.80.165:6789'
+          #pool: rbd
+          #image: kube-wordpress-002
+          #fsType: ext4
+          #user: admin
+          #keyring: /etc/ceph/ceph.client.admin.keyring
+      #- name: cm-wordpress-002
+        #configMap:
+          #name: cm-wordpress
+          #imagefeatures: 'layering'
+      - name: wordpress-mysql-data
+        rbd:
+          monitors:
+            - '192.168.80.165:6789'
+          pool: rbd
+          image: kube-wordpress-002
+          fsType: ext4
+          user: admin
+          keyring: /etc/ceph/ceph.client.admin.keyring
+          #imagefeatures: 'layering'
+
+      #- hostPath:
+          #path: /data/wordpress/wordpress-002/mysql
+        #name: wordpress-mysql-data
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: wordpress-server
+  namespace: wordpress-002
+spec:
+  type: NodePort
+  ports:
+  - port: 80
+    targetPort: 80
+    nodePort: 30012
+  selector:
+    app: wordpress-002

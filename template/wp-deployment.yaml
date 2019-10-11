@@ -1,0 +1,78 @@
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: ns-wordpress 
+  namespace: ns-wordpress
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: ns-wordpress
+    spec:
+      initContainers:
+      - name: init
+        image: 10779164/busybox:latest
+        command: ['sh', '-c', 'rm -rf /root/lost+found']
+        volumeMounts:
+        - name: wordpress-mysql-data
+          mountPath: /root
+      containers:
+      - name: wordpress
+        image: 10779164/wordpress:v1
+        ports:
+          - containerPort: 80
+          - containerPort: 9000
+        volumeMounts:
+          - name: cm-wordpress
+            mountPath: /var/www/html/wordpress/wp-config.php
+            subPath: wp-config.php
+        #volumeMounts:
+          #- mountPath: /var/www/html/wordpress
+            #readOnly: false
+            #name: wordpress-data
+      - name: wordpress-mysql
+        image: 10779164/wordpress-mysql:v1
+        env:
+        - name: MYSQL_ROOT_PASSWORD
+          value: "123.com"
+        - name: WORDPRESS_DATABASE
+          value: "wordpress"
+        - name: WORDPRESS_USER
+          value: "wordpress"
+        - name: WORDPRESS_PASSWORD
+          value: "123.com"
+        ports:
+          - containerPort: 3306
+        volumeMounts:
+          - mountPath: /var/lib/mysql
+            readOnly: false
+            name: wordpress-mysql-data
+
+      ####cephbackup agent
+      - name: wordpress-agent
+        image: 10779164/cephbackup:v1
+        volumeMounts:
+          - mountPath: /var/log/ceph_backup.log
+            name: cephbackup-logs
+          - mountPath: /backup/cephbackup
+            name: cephbackup-path
+
+      volumes:
+      #- hostPath:
+          #path: /data/wordpress/wordpress
+        #name: wordpress-data
+      - name: cm-wordpress
+        configMap:
+          name: cm-wordpress   
+      - name: wordpress-mysql-data
+        persistentVolumeClaim:
+          claimName: rbd-pvc
+      ##cephbackup agent
+      - name: cephbackup-logs
+        hostPath:
+          path: /var/log/ceph_backup.log 
+      - name: cephbackup-path
+        hostPath:  
+          path: /backup/cephbackup
