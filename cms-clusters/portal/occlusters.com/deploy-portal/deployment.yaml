@@ -1,0 +1,48 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: portal 
+  namespace: portal
+  labels:
+    app: portal
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: portal
+  template:
+    metadata:
+      labels:
+        app: portal
+    spec:      
+      containers:
+        - name: portal
+          image: registry.cloudclusters.net/cloudclusters/portal:v0.4
+          imagePullPolicy: IfNotPresent             
+          ports:
+            - name: http
+              containerPort: 80
+              protocol: TCP
+            - name: https
+              containerPort: 443
+              protocol: TCP
+          resources:
+            limits:
+              cpu: '4.0'
+              memory: 8G
+            requests:
+              cpu: '3.0'
+              memory: 4G
+          # livenessProbe:
+          #   httpGet:
+          #     path: /
+          #     port: http
+          # readinessProbe:
+          #   httpGet:
+          #     path: /
+          #     port: http
+          # volumeMounts:
+          #- mountPath: /etc/nginx/sites-enabled
+          #  name: nginx            
+          #- mountPath: /var/www/html
+          #  name: portal  

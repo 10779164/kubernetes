@@ -1,0 +1,23 @@
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: portal
+  namespace: portal
+  annotations:
+    kubernetes.io/ingress.class: "nginx"
+    nginx.ingress.kubernetes.io/from-to-www-redirect: "true"
+spec:
+  rules:
+  - host: www.sqle.com
+    http:
+      paths:
+      - backend:
+          serviceName: portal
+          servicePort: 80
+        path: /
+  tls:
+  - hosts:
+    - www.sqle.com
+    secretName: sqle.com
+status:
+  loadBalancer: {}

@@ -1,0 +1,70 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: phpmyadmin 
+  namespace: phpmyadmin
+  labels:
+    app: phpmyadmin
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: phpmyadmin 
+  template:
+    metadata:
+      labels:
+        app: phpmyadmin 
+    spec:      
+      containers:
+        - name: phpmyadmin
+          image: registry.cloudclusters.net/cloudclusters/apache2proxy_fcgi:v0.0.1 
+          imagePullPolicy: IfNotPresent             
+          ports:
+            - name: http
+              containerPort: 80
+              protocol: TCP
+            - name: https
+              containerPort: 443
+              protocol: TCP
+          resources:
+            limits:
+              cpu: '4.0'
+              memory: 8G
+            requests:
+              cpu: '3.0'
+              memory: 4G
+          # livenessProbe:
+          #   httpGet:
+          #     path: /
+          #     port: http
+          # readinessProbe:
+          #   httpGet:
+          #     path: /
+          #     port: http
+          volumeMounts:
+          - mountPath: /etc/apache2/sites-enabled
+            name: apache             
+          - mountPath: /var/www/html
+            name: phpmyadmin  
+        - name: php-fpm 
+          image: phpmyadmin/phpmyadmin:fpm-alpine
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: PMA_ARBITRARY
+              value: "1"           
+          volumeMounts:          
+          - mountPath: /var/www/html
+            name: phpmyadmin 
+          resources:
+            limits:
+              cpu: '2'
+              memory: 2G
+            requests:
+              cpu: '0.5'
+              memory: 1G
+      volumes:          
+      - configMap:
+          name: apache
+        name: apache
+      - name: phpmyadmin
+        emptyDir: {}

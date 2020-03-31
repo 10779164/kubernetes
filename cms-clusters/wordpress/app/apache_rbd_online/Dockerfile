@@ -1,0 +1,70 @@
+FROM ubuntu:16.04
+
+ENV GOSU_VERSION 1.7
+RUN set -x \
+	&& apt-get update && apt-get install -y --no-install-recommends ca-certificates wget && rm -rf /var/lib/apt/lists/* \
+	&& wget -O /usr/local/bin/gosu "https://github.com/tianon/gosu/releases/download/$GOSU_VERSION/gosu-$(dpkg --print-architecture)" \
+	&& wget -O /usr/local/bin/gosu.asc "https://github.com/tianon/gosu/releases/download/$GOSU_VERSION/gosu-$(dpkg --print-architecture).asc" \
+	&& export GNUPGHOME="$(mktemp -d)" \
+	&& gpg --batch --keyserver ha.pool.sks-keyservers.net --recv-keys B42F6819007F00F88E364FD4036A9C25BF357DD4 \
+	&& gpg --batch --verify /usr/local/bin/gosu.asc /usr/local/bin/gosu \
+	#&& gpgconf --kill all \
+	&& rm -rf "$GNUPGHOME" /usr/local/bin/gosu.asc \
+	&& chmod +x /usr/local/bin/gosu \
+	&& gosu nobody true \
+	&& apt-get purge -y --auto-remove ca-certificates wget
+
+RUN apt-get update ; \
+    apt-get install -y software-properties-common wget curl vim unzip ; \
+    add-apt-repository -y ppa:ondrej/php ; \
+    gpg --keyserver keyserver.ubuntu.com --recv 4F4EA0AAE5267A6C ; \
+    gpg --export --armor 4F4EA0AAE5267A6C  | apt-key add - ; \
+    apt-get update ; \
+    apt-get install -y supervisor apache2 php7.3-xml php7.3-dom php7.3-json php7.3-fpm libapache2-mod-php7.3 php7.3-common php7.3-gd php7.3-mysql php7.3-curl php7.3-intl php7.3-xsl php7.3-mbstring php7.3-zip php7.3-bcmath php7.3-iconv php7.3-soap && rm -rf /var/lib/apt/lists/* ; \
+    a2enmod rewrite;\
+#    sed -i '656c post_max_size = 512M' /etc/php/7.3/*/php.ini ; \
+    sed -ri 's/(post_max_size) .*$/\1 = 512M/' /etc/php/7.3/*/php.ini ; \
+#    sed -i '809c upload_max_filesize = 512M' /etc/php/7.3/*/php.ini ; \
+    sed -ri 's/(upload_max_filesize) .*$/\1 = 512M/' /etc/php/7.3/*/php.ini ; \
+    mkdir /run/php/
+
+#RUN apt-get update ; \
+#    apt-get install -y supervisor apache2 libapache2-mod-php php-fpm php-mysql php-gd php-dom php-xml php-zip php-cli php-opcache php-curl php-json php-mbstring wget curl vim  && rm -rf /var/lib/apt/lists/* ; \
+#    sed -i '656c post_max_size = 512M' /etc/php/7.0/*/php.ini ; \
+#    sed -i '809c upload_max_filesize = 512M' /etc/php/7.0/*/php.ini ; \
+#    a2enmod rewrite ; \
+#    mkdir /run/php/
+
+RUN echo mysql-server-5.7 mysql-server/root_password password root@pass | debconf-set-selections \ 
+        && echo mysql-server-5.7 mysql-server/root_password_again password root@pass | debconf-set-selections \
+        && apt-get update && apt-get install -y mysql-server-5.7 && rm -rf /var/lib/apt/lists/* \
+        && rm -rf /var/lib/mysql && mkdir -p /var/lib/mysql /var/run/mysqld \
+        && chown -R mysql:mysql /var/lib/mysql /var/run/mysqld \
+        && chmod 766 /var/run/mysqld \
+#        && find /etc/mysql/ -name '*.cnf' -print0 \
+#                | xargs -0 grep -lZE '^(bind-address|log)' \
+#                | xargs -rt -0 sed -Ei 's/^(bind-address|log)/#&/' \
+        && echo '[mysqld]\nskip-host-cache\nskip-name-resolve' > /etc/mysql/conf.d/docker.cnf
+
+ENV WORDPRESS_VERSION 5.1
+RUN cd /tmp && \
+    wget "https://wordpress.org/wordpress-${WORDPRESS_VERSION}.tar.gz" && \
+    tar -xzf wordpress*.tar.gz && \
+    rm -rf /var/www/*
+#    mv wordpress/* /var/www/html/ && \
+#    rm -rf /tmp/* && \
+#    chown -R www-data:www-data /var/www/html && \
+#    chmod -R 755 /var/www/html && \
+#    cp -a /var/www/html/wp-config-sample.php /var/www/html/wp-config.php
+
+COPY docker-entrypoint.sh mysql_startup.sh install_wordpress.sh wp filebrowser /usr/bin/
+COPY supervisord.conf /etc/supervisor/supervisord.conf
+COPY ioncube_loader_lin_7.3.so /usr/lib/php/20180731
+COPY 00-ioncube.ini /etc/php/7.3/apache2/conf.d/
+
+RUN ln -s usr/bin/docker-entrypoint.sh /entrypoint.sh
+#    rm /etc/nginx/sites-enabled/default 
+ENTRYPOINT ["docker-entrypoint.sh"]
+
+EXPOSE 3306 80 8080
+CMD ["-c","/etc/supervisor/supervisord.conf"]

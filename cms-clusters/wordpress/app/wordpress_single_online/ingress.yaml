@@ -1,0 +1,21 @@
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: phpmyadmin
+  namespace: phpmyadmin
+spec:
+  rules:
+  - host: phpmyadmin-c007.cloudclusters.net
+    http:
+      paths:
+      - backend:
+          serviceName: phpmyadmin
+          servicePort: 80
+        path: /
+  tls:
+  - hosts:
+    - phpmyadmin-c007.cloudclusters.net
+    secretName: phpmyadmin-c007.cloudclusters.net
+
+status:
+  loadBalancer: {}

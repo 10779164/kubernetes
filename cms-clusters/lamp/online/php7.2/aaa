@@ -1,0 +1,13 @@
+2019-11-21 02:43:54,009 CRIT Supervisor is running as root.  Privileges were not dropped because no user is specified in the config file.  If you intend to run as root, you can set user=root in the config file to avoid this message.
+2019-11-21 02:43:54,010 WARN No file matches via include "/etc/supervisor/config.d/*.ini"
+2019-11-21 02:43:54,031 INFO RPC interface 'supervisor' initialized
+2019-11-21 02:43:54,031 CRIT Server 'unix_http_server' running without any HTTP authentication checking
+2019-11-21 02:43:54,031 INFO supervisord started with pid 1
+2019-11-21 02:43:55,035 INFO spawned: 'monitor' with pid 9
+2019-11-21 02:43:55,037 INFO spawned: 'api' with pid 10
+2019-11-21 02:43:55,040 INFO spawned: 'task' with pid 11
+2019-11-21 02:43:55,042 INFO spawned: 'watch' with pid 12
+2019-11-21 02:43:56,264 INFO success: api entered RUNNING state, process has stayed up for > than 1 seconds (startsecs)
+2019-11-21 02:44:05,037 INFO success: monitor entered RUNNING state, process has stayed up for > than 10 seconds (startsecs)
+2019-11-21 02:44:06,039 INFO success: task entered RUNNING state, process has stayed up for > than 10 seconds (startsecs)
+2019-11-21 02:44:06,039 INFO success: watch entered RUNNING state, process has stayed up for > than 10 seconds (startsecs)

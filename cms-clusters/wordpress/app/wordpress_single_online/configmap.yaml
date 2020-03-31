@@ -1,0 +1,22 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  namespace: phpmyadmin
+  labels:
+    name: apache
+  name: apache
+data:
+  000-default.conf: |-
+    <VirtualHost *:80>
+
+        ServerAdmin webmaster@localhost
+        DocumentRoot /var/www/html
+
+    <FilesMatch "\.php$">
+    SetHandler "proxy:fcgi://127.0.0.1:9000/"
+    </FilesMatch>
+
+        ErrorLog ${APACHE_LOG_DIR}/error.log
+        CustomLog ${APACHE_LOG_DIR}/access.log combined
+
+    </VirtualHost>
